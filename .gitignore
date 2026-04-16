@@ -1,0 +1,10 @@
+.env
+data/
+*.pt
+*.pth
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+results/checkpoints/
+INTERNAL_PROJECT_BRAIN.md
+DEVELOPMENT_HISTORY.md

@@ -1,132 +1,106 @@
 # Deep Learning for Pediatric Pneumonia Detection from Chest X-Ray Images
 
-> CS-171 course project — comparing a lightweight custom CNN against a fine-tuned DenseNet121 for pediatric pneumonia classification from chest radiographs.
+> CS 171 Machine Learning course project at San Jose State University -- comparing a lightweight custom CNN against a fine-tuned DenseNet121 for binary pneumonia classification from pediatric chest radiographs.
+
+**Team:** Aaron Dang, Jenil Kathrotia, Aidan Marra
 
 ---
 
 ## Table of Contents
 
-- [Introduction](#introduction)
 - [Problem Statement](#problem-statement)
 - [Dataset](#dataset)
 - [Methodology](#methodology)
-- [Innovation and Objectives](#innovation-and-objectives)
 - [Evaluation Metrics](#evaluation-metrics)
-- [Related Work](#related-work)
-- [Timeline](#timeline)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
-- [Conclusion](#conclusion)
+- [Running on Google Colab](#running-on-google-colab)
+- [Timeline](#timeline)
+- [Related Work](#related-work)
 - [References](#references)
-
----
-
-## Introduction
-
-Pneumonia is a serious lung infection that can become life-threatening if it is not detected early. In medical settings, chest X-ray analysis is one of the most common ways to support pneumonia diagnosis, but manual interpretation can be time-consuming and difficult, especially when many patients must be screened quickly. This project proposes a neural-network-based system that classifies pediatric chest X-ray images as either **Normal** or **Pneumonia** using a publicly available Kaggle dataset containing about 5,863 images.
-
-**Dataset:** [Chest X-Ray Images (Pneumonia) — Kaggle](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia)
 
 ---
 
 ## Problem Statement
 
-The goal of this project is to build a neural network that can automatically detect pneumonia from chest X-ray images. This problem is important because delayed or incorrect diagnosis can affect treatment decisions and patient outcomes. A reliable model could support doctors by serving as a screening tool, helping identify suspicious cases faster and reducing the chance that a pneumonia case is missed.
+Pneumonia is a leading cause of hospitalization and death, especially in young children. Chest X-rays are the standard screening tool, but manual interpretation is slow and error-prone under high patient volume. This project builds a deep learning system that classifies pediatric chest X-ray images as **Normal** or **Pneumonia**.
 
-> ⚠️ In this application, **false negatives** are especially dangerous because they may leave sick patients untreated. Recall is therefore prioritized during evaluation.
+> In this application, **false negatives** (missed pneumonia) are far more dangerous than false positives. A sick child sent home untreated can face life-threatening complications. **Recall is therefore the primary evaluation metric.**
 
 ---
 
 ## Dataset
 
-The selected dataset contains **5,863 JPEG chest X-ray images** organized into `train`, `test`, and `val` folders, labeled into two categories: **Normal** and **Pneumonia**. The chest radiographs are anterior-posterior images collected from pediatric patients aged 1–5 years at Guangzhou Women and Children's Medical Center, and were screened for quality control before use.
+[Chest X-Ray Images (Pneumonia) -- Kaggle](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia)
 
-**Input feature:** chest X-ray image
-**Target label:** diagnosis category (Normal / Pneumonia)
+- **5,863 JPEG** anterior-posterior chest radiographs from pediatric patients aged 1-5 years
+- Collected at Guangzhou Women and Children's Medical Center
+- Two classes: **NORMAL** and **PNEUMONIA**
+- Pre-split into `train/`, `val/`, and `test/` folders
 
-### Preprocessing
+| Split | NORMAL | PNEUMONIA | Total |
+|-------|-------:|----------:|------:|
+| Train |  1,341 |     3,875 | 5,216 |
+| Val   |      8 |         8 |    16 |
+| Test  |    234 |       390 |   624 |
 
-- Image resizing to a fixed input size
-- Normalization (ImageNet statistics for pretrained models)
-- Data augmentation: horizontal flipping and small affine transformations to improve generalization
-- Class imbalance handling via `CrossEntropyLoss` class weights, compared against simple oversampling
+The training set has a **~74/26 class imbalance** (Pneumonia-heavy), which is addressed via inverse-frequency class weighting in the loss function.
 
-Torchvision supports common augmentation pipelines, and PyTorch's `CrossEntropyLoss` supports class weights for imbalanced classification.
+### Preprocessing Pipeline
+
+All preprocessing is implemented in `src/datasets.py`:
+
+- **Resize** to 256px, then **RandomResizedCrop** to 224px (train) or **CenterCrop** to 224px (eval)
+- **RandomHorizontalFlip** and **RandomRotation(10)** for training augmentation
+- **ImageNet normalization** (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) for compatibility with pretrained DenseNet121 weights
+- **Class weighting** via `CrossEntropyLoss(weight=...)` using the formula `w_c = total / (num_classes * count_c)`
 
 ---
 
 ## Methodology
 
-This project compares **two model approaches**:
+### Model 1: Custom Lightweight CNN
 
-### 1. Custom Lightweight CNN
-
-A deep CNN built with **spatially separable convolutions** to reduce the number of parameters while still learning useful visual patterns. Proposed architecture:
+A parameter-efficient network built with **depthwise-separable convolutions** (same core idea as MobileNet). This reduces parameters by ~8-9x per layer compared to standard convolutions, which is critical given the small dataset size.
 
 ```
-Input image
-  → Conv block
-  → Depthwise-separable conv blocks (BatchNorm + ReLU)
-  → Max-pooling
-  → Global average pooling
-  → Dropout
-  → Fully connected classification head
+Input (B, 3, 224, 224)
+  -> Conv2d(3, 32) + BatchNorm + ReLU + MaxPool
+  -> SeparableConv2d(32, 64)   + MaxPool
+  -> SeparableConv2d(64, 128)  + MaxPool
+  -> SeparableConv2d(128, 256) + MaxPool
+  -> AdaptiveAvgPool2d(1)
+  -> Dropout(0.5) -> Linear(256, 2)
 ```
 
-This design is lightweight and serves as the efficiency baseline.
+Each `SeparableConv2d` block consists of a depthwise convolution (one filter per channel), a pointwise 1x1 convolution, BatchNorm, and ReLU.
 
-### 2. DenseNet121 (Transfer Learning)
+### Model 2: DenseNet121 (Transfer Learning)
 
-**DenseNet121** with pretrained ImageNet weights from Torchvision. DenseNet121 is widely used in chest X-ray research and is the backbone behind **CheXNet**, a well-known model for pneumonia detection from chest X-rays.
+DenseNet121 with ImageNet-pretrained weights, widely used in chest X-ray research (it is the backbone behind CheXNet). The original 1000-class head is replaced with a 2-class linear layer. Training uses a two-phase strategy:
 
-**Implementation stack:** PyTorch + Torchvision for data loading, preprocessing, transfer learning, and evaluation.
+1. **Phase 1 (frozen):** Only the classifier head is trained for 5 epochs at LR=1e-3
+2. **Phase 2 (unfrozen):** The full network is fine-tuned for 15 epochs at LR=1e-4
 
----
+### Implementation Stack
 
-## Innovation and Objectives
-
-The innovative part of this project is the **comparison between a lightweight custom CNN and a domain-relevant pre-trained DenseNet121** on the same medical imaging task. Instead of only reporting accuracy, the project focuses on clinically meaningful evaluation — especially reducing false negatives — and adds simple **heatmap-based interpretability** so model decisions can be better understood.
-
-**Objectives:**
-
-1. Build a baseline custom CNN for pneumonia classification.
-2. Fine-tune DenseNet121 using transfer learning.
-3. Compare both models using performance and error analysis.
-4. Identify which approach is more suitable for medical-image screening tasks.
+- **PyTorch + Torchvision** for models, data loading, transforms, and training
+- **scikit-learn** for classification metrics
+- **seaborn / matplotlib** for confusion matrices and training curves
+- **Grad-CAM** for model interpretability (heatmap visualization)
 
 ---
 
 ## Evaluation Metrics
 
-| Metric | Why it matters |
-| --- | --- |
-| **Accuracy** | Overall measure of correct predictions (not sufficient alone for medical tasks). |
-| **Recall** | Fraction of pneumonia cases correctly identified — the most important metric here. |
-| **Precision** | Fraction of predicted pneumonia cases that are truly positive. |
-| **F1-score** | Balances precision and recall under class imbalance. |
-| **Confusion matrix** | Full picture of true/false positives and negatives. |
+| Priority | Metric | Why |
+|----------|--------|-----|
+| 1 | **Recall** | Missed pneumonia = untreated child. Minimize false negatives. |
+| 2 | **F1-Score** | Balances recall and precision for fair model comparison. |
+| 3 | **Precision** | Keeps false alarms manageable for clinical trust. |
+| 4 | **Accuracy** | Reported for completeness; misleading alone under class imbalance. |
 
-Precision-recall tradeoffs will also be examined, because missing a pneumonia case is more serious than generating an extra warning.
-
----
-
-## Related Work
-
-- **Kermany et al. (2018)** showed that deep learning with transfer learning can accurately analyze pediatric chest X-ray images and even distinguish bacterial vs. viral pneumonia.
-- **CheXNet (Rajpurkar et al., 2017)** used a 121-layer CNN based on DenseNet121 for chest X-ray diagnosis and reported very strong pneumonia detection performance on a large benchmark.
-
-These studies show deep learning is highly promising for medical imaging, but many approaches still face challenges such as dataset imbalance, limited interpretability, and generalization across data sources. This project addresses those issues by comparing a lightweight custom model against a transfer-learning model and by emphasizing recall and interpretability.
-
----
-
-## Timeline
-
-| Week | Goals |
-| --- | --- |
-| **1** | Download dataset, inspect class distribution, preprocess images, prepare train/val/test loaders. |
-| **2** | Build and train the custom CNN, tune basic hyperparameters, record baseline results. |
-| **3** | Fine-tune DenseNet121 with transfer learning and compare against the custom model. |
-| **4** | Evaluate with recall / precision / F1 / confusion matrix, generate visualizations, write final report, prepare presentation. |
+Both models are also evaluated with a **confusion matrix** and **Grad-CAM heatmaps** for interpretability.
 
 ---
 
@@ -134,27 +108,52 @@ These studies show deep learning is highly promising for medical imaging, but ma
 
 ```
 CS-171-Chest-X-Ray-Medical-Diagnosis/
-├── data/                  # Dataset (not tracked; see Getting Started)
+├── data/                          # Dataset (not tracked; see Getting Started)
 │   ├── train/
+│   │   ├── NORMAL/
+│   │   └── PNEUMONIA/
 │   ├── val/
+│   │   ├── NORMAL/
+│   │   └── PNEUMONIA/
 │   └── test/
-├── notebooks/             # Exploratory analysis and experiments
+│       ├── NORMAL/
+│       └── PNEUMONIA/
+├── notebooks/
+│   ├── 01_eda.ipynb               # Exploratory data analysis
+│   └── 02_train.ipynb             # Training + evaluation + comparison
 ├── src/
-│   ├── datasets.py        # Data loaders and augmentation
-│   ├── models/
-│   │   ├── custom_cnn.py  # Lightweight separable-conv CNN
-│   │   └── densenet.py    # DenseNet121 transfer-learning model
-│   ├── train.py           # Training loop
-│   ├── evaluate.py        # Metrics + confusion matrix
-│   └── interpret.py       # Grad-CAM / heatmap visualization
-├── results/               # Saved metrics, plots, checkpoints
+│   ├── __init__.py
+│   ├── config.py                  # Centralized paths, constants, device
+│   ├── datasets.py                # Transforms, DataLoaders, class weights
+│   ├── train.py                   # Training loop + checkpointing
+│   ├── evaluate.py                # Metrics, confusion matrix, predictions
+│   ├── interpret.py               # Grad-CAM heatmap visualization
+│   └── models/
+│       ├── __init__.py            # Re-exports CustomCNN, build_densenet121
+│       ├── custom_cnn.py          # SeparableConv2d + CustomCNN
+│       └── densenet.py            # DenseNet121 wrapper
+├── results/                       # Generated plots, metrics, checkpoints
+│   ├── checkpoints/               # Saved .pt model weights
+│   └── gradcam/                   # Grad-CAM overlay images
 ├── requirements.txt
 └── README.md
 ```
 
+### Design Principles
+
+- **All logic lives in `src/`** -- notebooks only call functions from `src/` modules
+- **Centralized paths** in `src/config.py` -- no hardcoded paths anywhere else; auto-detects local vs Colab environment
+- **Pure PyTorch** -- no high-level wrappers (FastAI, Lightning) per course requirements
+
 ---
 
 ## Getting Started
+
+### Prerequisites
+
+- Python 3.10+
+- Git
+- A Kaggle account (to download the dataset)
 
 ### 1. Clone the repository
 
@@ -163,7 +162,9 @@ git clone https://github.com/jenilkathrotia/CS-171-Chest-X-Ray-Medical-Diagnosis
 cd CS-171-Chest-X-Ray-Medical-Diagnosis
 ```
 
-### 2. Install dependencies
+### 2. Create a virtual environment and install dependencies
+
+**macOS / Linux:**
 
 ```bash
 python -m venv .venv
@@ -171,28 +172,92 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+**Windows (PowerShell):**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
 ### 3. Download the dataset
 
-Download from [Kaggle](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia) and extract into `data/` so the structure matches `data/train`, `data/val`, `data/test`.
+Download from [Kaggle](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia) and extract so the folder structure matches:
 
-### 4. Train a model
-
-```bash
-python src/train.py --model custom_cnn
-python src/train.py --model densenet121 --pretrained
+```
+data/
+├── train/
+│   ├── NORMAL/
+│   └── PNEUMONIA/
+├── val/
+│   ├── NORMAL/
+│   └── PNEUMONIA/
+└── test/
+    ├── NORMAL/
+    └── PNEUMONIA/
 ```
 
-### 5. Evaluate
+The `data/` folder is gitignored and will not be committed.
 
-```bash
-python src/evaluate.py --checkpoint results/densenet121_best.pt
-```
+### 4. Run the EDA notebook
+
+Open `notebooks/01_eda.ipynb` in Jupyter, VS Code, or Cursor and run all cells. This will:
+
+- Verify the dataset directory layout and file counts
+- Display class distribution charts
+- Show sample X-ray images
+- Validate the DataLoader pipeline end-to-end
+- Compute and print class weights
+
+If all cells run without errors, the data pipeline is ready.
+
+### 5. Train and evaluate models
+
+Open `notebooks/02_train.ipynb` and run all cells. This will:
+
+- Run a smoke test (1 batch through both models)
+- Train the Custom CNN with class-weighted loss
+- Plot training curves (loss + accuracy)
+- Evaluate on the test set (recall, F1, precision, confusion matrix)
+- Train DenseNet121 with two-phase fine-tuning
+- Compare both models side-by-side
+
+Best model checkpoints are saved to `results/checkpoints/`. Confusion matrix plots are saved to `results/`.
 
 ---
 
-## Conclusion
+## Running on Google Colab
 
-This project proposes a deep learning system for detecting pneumonia from pediatric chest X-ray images. By comparing a custom lightweight CNN with a pre-trained DenseNet121 model, the project studies both efficiency and predictive performance in a medically important classification task. The expected outcome is a model that can support pneumonia screening with strong recall and practical value for computer-aided diagnosis. Because pneumonia detection is a high-stakes application, this project has meaningful real-world relevance in healthcare and medical AI.
+Both notebooks auto-detect the Colab environment and handle dataset download automatically. No manual data setup is needed.
+
+1. Upload the repository to Google Drive or clone it in a Colab cell
+2. Open a notebook (`.ipynb`) in Colab
+3. Select a **GPU runtime** (Runtime > Change runtime type > T4 GPU)
+4. Run all cells -- the first cell downloads the dataset via `kagglehub`
+
+The `src/config.py` module switches `DATA_DIR` to the kagglehub cache path when it detects a Colab environment.
+
+---
+
+## Timeline
+
+| Date | Milestone |
+|------|-----------|
+| Apr 15 | Project proposal submitted |
+| Apr 15-20 | Data preprocessing, EDA, pipeline validation |
+| Apr 20-27 | Custom CNN implementation and training |
+| Apr 22 | Team progress discussion |
+| Apr 27-May 4 | DenseNet121 fine-tuning and model comparison |
+| May 4-11 | Full evaluation, Grad-CAM, final report, presentation |
+
+---
+
+## Related Work
+
+- **Kermany et al. (2018)** demonstrated that transfer learning can accurately analyze pediatric chest X-rays and distinguish bacterial vs. viral pneumonia.
+- **CheXNet (Rajpurkar et al., 2017)** used DenseNet121 for chest X-ray diagnosis and achieved radiologist-level pneumonia detection on the ChestX-ray14 benchmark.
+
+This project addresses gaps in prior work by comparing a lightweight custom model against transfer learning, emphasizing recall over accuracy, and adding Grad-CAM interpretability.
 
 ---
 
