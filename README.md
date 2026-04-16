@@ -136,7 +136,6 @@ CS-171-Chest-X-Ray-Medical-Diagnosis/
 │   ├── checkpoints/               # Saved .pt model weights
 │   └── gradcam/                   # Grad-CAM overlay images
 ├── requirements.txt
-├── DEVELOPMENT_HISTORY.md         # Changelog of all project changes
 └── README.md
 ```
 
