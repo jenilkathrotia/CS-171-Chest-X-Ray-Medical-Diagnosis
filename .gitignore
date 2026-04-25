@@ -1,0 +1,22 @@
+# data + outputs
+data/
+results/checkpoints/
+
+# models
+*.pt
+*.pth
+
+# environments
+.venv/
+venv/
+env/
+
+# python
+__pycache__/
+*.pyc
+
+# notebooks
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
