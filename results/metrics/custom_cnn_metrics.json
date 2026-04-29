@@ -1,0 +1,57 @@
+{
+  "num_samples": 624,
+  "accuracy": 0.625,
+  "classification_report": {
+    "NORMAL": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 234.0
+    },
+    "PNEUMONIA": {
+      "precision": 0.625,
+      "recall": 1.0,
+      "f1-score": 0.7692307692307693,
+      "support": 390.0
+    },
+    "accuracy": 0.625,
+    "macro avg": {
+      "precision": 0.3125,
+      "recall": 0.5,
+      "f1-score": 0.38461538461538464,
+      "support": 624.0
+    },
+    "weighted avg": {
+      "precision": 0.390625,
+      "recall": 0.625,
+      "f1-score": 0.4807692307692308,
+      "support": 624.0
+    }
+  },
+  "classification_report_text": "              precision    recall  f1-score   support\n\n      NORMAL     0.0000    0.0000    0.0000       234\n   PNEUMONIA     0.6250    1.0000    0.7692       390\n\n    accuracy                         0.6250       624\n   macro avg     0.3125    0.5000    0.3846       624\nweighted avg     0.3906    0.6250    0.4808       624\n",
+  "confusion_matrix": [
+    [
+      0,
+      234
+    ],
+    [
+      0,
+      390
+    ]
+  ],
+  "class_names": [
+    "NORMAL",
+    "PNEUMONIA"
+  ],
+  "pneumonia_label": "PNEUMONIA",
+  "pneumonia_recall_sensitivity": 1.0,
+  "model_name": "custom_cnn",
+  "device": "cpu",
+  "checkpoint_path": "C:\\Users\\aidan\\Downloads\\School\\CS 171\\Project\\CS-171-Chest-X-Ray-Medical-Diagnosis\\results\\checkpoints\\custom_cnn_best.pt",
+  "checkpoint_metadata": {
+    "model_name": "custom_cnn",
+    "epoch": 0,
+    "val_loss": 0.0,
+    "val_acc": 0.0
+  }
+}
