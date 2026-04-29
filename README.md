@@ -8,13 +8,6 @@ Binary chest X-ray classification project (`NORMAL` vs `PNEUMONIA`) using PyTorc
 - **Part 2 (Training):** Model training/checkpointing/logging in `src/train.py`.
 - **Part 3 (Evaluation + Visualization):** Metrics, confusion matrices, plots, and Grad-CAM in `src/evaluate.py` and `src/interpret.py`.
 
-Primary deliverables for Part 3:
-
-- Quantitative report: `results/metrics.md`
-- Metrics JSON: `results/metrics/custom_cnn_metrics.json`, `results/metrics/densenet121_metrics.json`
-- Visuals: `results/plots/`, `results/confusion_matrices/`, `results/gradcam/`
-- Narrative notebooks: `notebooks/02_evaluation.ipynb`, `notebooks/03_gradcam.ipynb`
-
 ## Repository Structure
 
 - `src/` - core code (`datasets`, `models`, `train`, `evaluate`, `interpret`, `config`)
@@ -169,4 +162,3 @@ Interpretation: both models predicted all test samples as `PNEUMONIA` in this ru
 
 - Current local checkpoint metadata (`epoch=0`, `val_loss=0.0`, `val_acc=0.0`) does not align with multi-epoch training logs.
 - Keep this provenance caveat in mind when interpreting current local metrics/plots as final model evidence.
-- See `results/metrics.md` for full Part 3 discussion and limitations.
