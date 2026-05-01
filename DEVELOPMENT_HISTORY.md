@@ -187,3 +187,60 @@ Diagnosis project. Each session appends a new date-headed section.
 - This execution pass is full-data at evaluation time, but checkpoint metadata still reports:
   - `epoch=0`, `val_loss=0.0`, `val_acc=0.0`
 - This provenance caveat is explicitly documented in project context files and report language.
+
+## [2026-04-30] Part 3 Rerun Refresh (Verified Checkpoints from `part-2`)
+
+### Checkpoint provenance fix
+- Pulled verified trained checkpoints and matching logs from `origin/part-2`:
+  - `git checkout origin/part-2 -- results/checkpoints/custom_cnn_best.pt results/checkpoints/densenet121_best.pt`
+  - `git checkout origin/part-2 -- results/logs/custom_cnn.csv results/logs/densenet121.csv`
+- Inspected checkpoint metadata via `torch.load` and confirmed valid training state:
+  - `custom_cnn`: `epoch=1`, `val_loss=0.8823`, `val_acc=0.625`
+  - `densenet121`: `epoch=6`, `val_loss=0.0856`, `val_acc=0.9375`
+- File hashes (SHA256) recorded in terminal logs for reproducibility audit.
+- Closes the previously-tracked checkpoint provenance caveat.
+
+### Strict-clean of stale derived outputs
+- Removed prior generated artifacts to prevent any residual stale values:
+  - `results/metrics/`, `results/plots/`, `results/confusion_matrices/`, `results/gradcam/`
+  - `notebooks/02_evaluation.executed.ipynb`, `notebooks/03_gradcam.executed.ipynb`
+
+### End-to-end regeneration on real test split (624 samples)
+- `python -m src.evaluate --model custom_cnn` and `--model densenet121` against
+  the resolved KaggleHub dataset path.
+- `python -m src.interpret plot-logs`, then `confusion-matrix` per model,
+  then `gradcam --num-examples 6` per model.
+
+### New evaluation results (replaces 2026-04-29 numbers)
+- `custom_cnn`:
+  - accuracy `0.8333`
+  - pneumonia recall (sensitivity) `0.9128`
+  - normal recall `0.7009`
+  - macro F1 `0.8159`
+  - confusion matrix `TN=164, FP=70, FN=34, TP=356`
+- `densenet121`:
+  - accuracy `0.8878`
+  - pneumonia recall (sensitivity) `0.9897`
+  - normal recall `0.7179`
+  - macro F1 `0.8722`
+  - confusion matrix `TN=168, FP=66, FN=4, TP=386`
+
+### Documentation rewrites
+- Rewrote `results/metrics.md` with model-specific metrics, separate confusion
+  matrix interpretation, training trend observations, Grad-CAM commentary,
+  and proportional limitations.
+- Updated `README.md` Latest Evaluation Snapshot table and replaced obsolete
+  checkpoint-provenance caveat language.
+- Updated `INTERNAL_PROJECT_BRAIN.md` results map, latest execution summary,
+  caveat tracking (resolved), and quick-reference table.
+
+### Notebook refresh
+- Updated `notebooks/02_evaluation.ipynb` interpretation to match new metrics.
+- Updated `notebooks/03_gradcam.ipynb` interpretability commentary to reflect
+  non-degenerate model behavior.
+- Re-executed both notebooks; regenerated `*.executed.ipynb` snapshots.
+
+### Outcome
+- All Part 3 deliverables (code, metrics, figures, notebooks, report) are now
+  regenerated end-to-end from the same verified checkpoint set and dataset,
+  producing internally consistent and clinically meaningful results.

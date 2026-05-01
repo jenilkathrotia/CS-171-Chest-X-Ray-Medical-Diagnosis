@@ -124,19 +124,19 @@ python -m src.interpret gradcam --model densenet121 --data-dir "<path-to-chest_x
 
 ## Latest Evaluation Snapshot
 
-From `results/metrics/custom_cnn_metrics.json` and `results/metrics/densenet121_metrics.json`:
+From `results/metrics/custom_cnn_metrics.json` and `results/metrics/densenet121_metrics.json` (test split, 624 samples; 234 NORMAL, 390 PNEUMONIA):
 
-- Test samples: **624** (234 NORMAL, 390 PNEUMONIA)
-- Both models (current local checkpoints):
-  - Accuracy: **0.625**
-  - Pneumonia recall (sensitivity): **1.000**
-  - Pneumonia precision: **0.625**
-  - Pneumonia F1: **0.769**
-  - Normal recall: **0.000**
-  - Macro F1: **0.385**
-- Confusion matrix (both): `[[0, 234], [0, 390]]`
+| Model | Accuracy | Pneumonia Recall | Pneumonia Precision | Pneumonia F1 | Normal Recall | Macro F1 |
+|---|---:|---:|---:|---:|---:|---:|
+| `custom_cnn` | 0.8333 | 0.9128 | 0.8357 | 0.8725 | 0.7009 | 0.8159 |
+| `densenet121` | 0.8878 | 0.9897 | 0.8540 | 0.9169 | 0.7179 | 0.8722 |
 
-Interpretation: both models predicted all test samples as `PNEUMONIA` in this run, yielding perfect pneumonia recall but zero specificity for `NORMAL`.
+Confusion matrices:
+
+- `custom_cnn`: TN=164, FP=70, FN=34, TP=356
+- `densenet121`: TN=168, FP=66, FN=4, TP=386
+
+Interpretation: DenseNet121 is the stronger model on every clinical metric. It misses only 4 pneumonia cases (sensitivity 0.9897) and reaches 0.9767 NORMAL precision, making it the recommended choice. The custom CNN serves as a viable lightweight baseline.
 
 ## Result Figures
 
@@ -160,5 +160,7 @@ Interpretation: both models predicted all test samples as `PNEUMONIA` in this ru
 
 ## Caveats
 
-- Current local checkpoint metadata (`epoch=0`, `val_loss=0.0`, `val_acc=0.0`) does not align with multi-epoch training logs.
-- Keep this provenance caveat in mind when interpreting current local metrics/plots as final model evidence.
+- Results reflect a single test split from KaggleHub v2 of the dataset; no operating-point sweep (ROC/PR) is performed.
+- Class imbalance is partially mitigated via class-weighted training loss, but residual imbalance remains.
+- Checkpoints used for evaluation come from the `part-2` branch; matching training logs are in `results/logs/`.
+- See `results/metrics.md` for full Part 3 discussion and limitations.

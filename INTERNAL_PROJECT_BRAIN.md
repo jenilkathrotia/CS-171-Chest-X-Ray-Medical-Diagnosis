@@ -1,7 +1,7 @@
 # Project Brain — CS 171 Chest X-Ray Pneumonia Diagnosis
 
 > Internal context document. **Never commit this file** (it is gitignored).
-> Last updated: 2026-04-29
+> Last updated: 2026-04-30
 
 ---
 
@@ -124,23 +124,33 @@
 
 ### Results folder map (current local workspace semantics)
 - `results/logs/`: training history traces from model training runs.
-- `results/plots/`: visualizations derived from log files.
-- `results/checkpoints/`: local checkpoint files currently present with metadata
-  `epoch=0`, `val_loss=0.0`, `val_acc=0.0`.
+- `results/plots/`: training curve visualizations derived from log files.
+- `results/checkpoints/`: trained checkpoints sourced from `origin/part-2`.
+  Metadata is non-degenerate (`custom_cnn`: epoch=1, val_loss~0.882, val_acc=0.625;
+  `densenet121`: epoch=6, val_loss~0.086, val_acc=0.9375).
 - `results/smoke_data/`: synthetic tiny dataset for pipeline smoke tests.
 - `results/metrics/`, `results/confusion_matrices/`, `results/gradcam/`:
-  outputs generated from currently available local checkpoints/data.
+  outputs regenerated end-to-end from the current `part-2` checkpoints.
 - `results/metrics.md`: final written Part 3 report summary tied to generated artifacts.
 
-### Latest full-data execution summary (2026-04-29)
+### Latest full-data execution summary (2026-04-30)
+- Checkpoint source: `origin/part-2` branch (pulled via `git checkout origin/part-2 -- results/checkpoints/*_best.pt results/logs/*.csv`).
 - Real evaluation data source:
   `C:/Users/aidan/.cache/kagglehub/datasets/paultimothymooney/chest-xray-pneumonia/versions/2/chest_xray`
-- Evaluated test samples: `624` (from real Kaggle split).
-- Current checkpoint set outcomes (`custom_cnn` and `densenet121`):
-  - accuracy `0.6250`
-  - pneumonia recall (sensitivity) `1.0000`
-  - normal recall `0.0000`
-- Regenerated outputs:
+- Evaluated test samples: `624` (234 NORMAL, 390 PNEUMONIA).
+- `custom_cnn` results:
+  - accuracy `0.8333`
+  - pneumonia recall (sensitivity) `0.9128`
+  - normal recall `0.7009`
+  - macro F1 `0.8159`
+  - confusion matrix `TN=164, FP=70, FN=34, TP=356`
+- `densenet121` results:
+  - accuracy `0.8878`
+  - pneumonia recall (sensitivity) `0.9897`
+  - normal recall `0.7179`
+  - macro F1 `0.8722`
+  - confusion matrix `TN=168, FP=66, FN=4, TP=386`
+- Regenerated outputs (all derived from rerun on these checkpoints):
   - `results/metrics/*.json`
   - `results/confusion_matrices/*.png`
   - `results/plots/*.png`
@@ -150,9 +160,11 @@
   - `notebooks/03_gradcam.ipynb`
 
 ### How to interpret current outputs
-- Training curves from `results/logs/*.csv` are useful trend evidence.
-- Current metrics/confusion/Grad-CAM outputs are pipeline-validation artifacts for the
-  present local state and should not be treated as final report-grade clinical evidence.
+- Metrics, confusion matrices, training curves, and Grad-CAM heatmaps are all
+  derived from the same checkpoint+dataset run and are internally consistent.
+- DenseNet121 is the recommended model (higher accuracy, much higher pneumonia
+  sensitivity, higher NORMAL precision). Custom CNN is a reasonable lightweight
+  baseline.
 
 ---
 
@@ -168,9 +180,15 @@
 - [x] Part 3: evaluation/interpretability notebooks completed
 - [x] Part 3: written report artifact completed (`results/metrics.md`)
 
-### Ongoing Caveat Tracking
-- [ ] Checkpoint provenance mismatch remains documented (`checkpoint_metadata` epoch/loss/acc
-      values do not align with multi-epoch training logs).
+### Resolved Caveats
+- [x] Checkpoint provenance: previously the local checkpoints showed
+      `epoch=0, val_loss=0.0, val_acc=0.0`. Resolved on 2026-04-30 by pulling
+      verified `*_best.pt` files from `origin/part-2`. New metadata is
+      non-degenerate and consistent with `results/logs/*.csv`.
+
+### Ongoing Limitations
+- Single test split; no calibration / threshold sweep performed.
+- Class imbalance partially mitigated via class-weighted loss.
 
 ---
 
@@ -186,7 +204,7 @@
 | `src/evaluate.py`          | Implemented (Part 3)          | Aidan         | Test metrics + JSON report output |
 | `src/interpret.py`         | Implemented (Part 3)          | Aidan         | Curves, confusion matrices, Grad-CAM |
 | `results/logs/*.csv`       | Available                     | Generated     | Training/validation history traces |
-| `results/checkpoints/*.pt` | Present locally               | Generated     | Local model checkpoints (current metadata caveat applies) |
+| `results/checkpoints/*.pt` | Verified (sourced from `part-2`) | Generated  | Trained model checkpoints with valid metadata |
 | `results/smoke_data/`      | Present locally               | Generated     | Synthetic pipeline smoke-test dataset |
 | `results/metrics/*.json`   | Generated                     | Generated     | Full test-set evaluation summaries for current checkpoint set |
 | `results/confusion_matrices/*.png` | Generated            | Generated     | Confusion matrix visualizations |
