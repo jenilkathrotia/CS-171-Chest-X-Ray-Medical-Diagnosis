@@ -20,3 +20,8 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# internal docs (not shipped with repo)
+INTERNAL_PROJECT_BRAIN.md
+DEVELOPMENT_HISTORY.md
+.env

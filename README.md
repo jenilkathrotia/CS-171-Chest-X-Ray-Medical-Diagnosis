@@ -153,10 +153,19 @@ Interpretation: DenseNet121 is the stronger model on every clinical metric. It m
 
 ## Notebook Deliverables
 
+- `notebooks/full_pipeline.ipynb` - **single-file Colab notebook** that runs the entire project end-to-end (EDA + optional training + evaluation + interpretability + summary). Set `RUN_TRAINING=False` (default) to use verified checkpoints, or `True` to retrain. Recommended for graders or quick reproduction.
 - `notebooks/01_eda.ipynb` - dataset exploration and sanity checks
 - `notebooks/train_colab.ipynb` - Colab training workflow
 - `notebooks/02_evaluation.ipynb` - metric and figure-based evaluation narrative
 - `notebooks/03_gradcam.ipynb` - Grad-CAM interpretability narrative
+
+### Quick Colab run
+
+1. Open https://colab.research.google.com
+2. File -> Open notebook -> GitHub tab
+3. URL: `https://github.com/jenilkathrotia/CS-171-Chest-X-Ray-Medical-Diagnosis`, branch: `part-3`
+4. Open `notebooks/full_pipeline.ipynb`
+5. Runtime -> Run all
 
 ## Caveats
 
