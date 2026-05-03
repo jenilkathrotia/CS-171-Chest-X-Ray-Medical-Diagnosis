@@ -23,11 +23,11 @@ Binary chest X-ray classification project (`NORMAL` vs `PNEUMONIA`) using PyTorc
 - `notebooks/02_evaluation.ipynb` - metric and figure-based evaluation narrative
 - `notebooks/03_gradcam.ipynb` - Grad-CAM interpretability narrative
 
-### Quick Colab run 
+### Quick Colab run (Uses existing checkpoints and doesn't retrain models)
 
 1. Open https://colab.research.google.com
 2. File -> Open notebook -> GitHub tab
-3. URL: `https://github.com/jenilkathrotia/CS-171-Chest-X-Ray-Medical-Diagnosis`, branch: `part-3`
+3. URL: `https://github.com/jenilkathrotia/CS-171-Chest-X-Ray-Medical-Diagnosis`, branch: `main`
 4. Open `notebooks/full_pipeline.ipynb`
 5. Runtime -> Run all
 
