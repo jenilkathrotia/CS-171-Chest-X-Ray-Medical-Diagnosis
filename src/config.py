@@ -1,78 +1,37 @@
-"""Centralized configuration for the Chest X-Ray Pneumonia Diagnosis project.
-
-All file paths, hyperparameter defaults, and environment flags live here.
-No other module should contain hardcoded paths.
-"""
-
-import os
-import platform
 from pathlib import Path
 
 import torch
 
-# ---------------------------------------------------------------------------
-# Environment detection
-# ---------------------------------------------------------------------------
-
-IN_COLAB: bool = "COLAB_GPU" in os.environ or Path("/content").exists()
-
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
-if IN_COLAB:
-    DATA_DIR = Path(
-        os.environ.get(
-            "DATA_DIR",
-            "/root/.cache/kagglehub/datasets/paultimothymooney/"
-            "chest-xray-pneumonia/versions/2/chest_xray",
-        )
-    )
-else:
-    DATA_DIR = PROJECT_ROOT / "data"
-
-RESULTS_DIR = PROJECT_ROOT / "results"
-RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-
+# paths
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+RESULTS_DIR = BASE_DIR / "results"
 CHECKPOINT_DIR = RESULTS_DIR / "checkpoints"
-CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR = RESULTS_DIR / "logs"
 
-GRADCAM_DIR = RESULTS_DIR / "gradcam"
-GRADCAM_DIR.mkdir(parents=True, exist_ok=True)
+# data / training config
+IMAGE_SIZE = 224
+BATCH_SIZE = 32
+NUM_WORKERS = 2
+NUM_CLASSES = 2
 
-# ---------------------------------------------------------------------------
-# Dataset constants
-# ---------------------------------------------------------------------------
+# optimization defaults
+NUM_EPOCHS = 15
+LEARNING_RATE = 1e-4
+DROPOUT = 0.3
 
-NUM_CLASSES: int = 2
-CLASS_NAMES: list[str] = ["NORMAL", "PNEUMONIA"]
+# normalization (ImageNet)
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD = [0.229, 0.224, 0.225]
 
-# ---------------------------------------------------------------------------
-# Image / DataLoader defaults
-# ---------------------------------------------------------------------------
 
-IMAGE_SIZE: int = 224
-BATCH_SIZE: int = 32
+def get_device() -> torch.device:
+    """Pick the best available device: cuda > mps > cpu."""
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
 
-# Windows spawns workers via 'spawn' which is slow; default to 0 there.
-NUM_WORKERS: int = 0 if platform.system() == "Windows" else 2
 
-# ImageNet normalization (required for DenseNet121 pretrained weights)
-IMAGENET_MEAN: tuple[float, ...] = (0.485, 0.456, 0.406)
-IMAGENET_STD: tuple[float, ...] = (0.229, 0.224, 0.225)
-
-# ---------------------------------------------------------------------------
-# Training defaults
-# ---------------------------------------------------------------------------
-
-LEARNING_RATE: float = 1e-3
-NUM_EPOCHS: int = 20
-DROPOUT: float = 0.5
-
-# ---------------------------------------------------------------------------
-# Device
-# ---------------------------------------------------------------------------
-
-DEVICE: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = get_device()

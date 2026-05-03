@@ -1,10 +1,27 @@
-.env
+# data + outputs
 data/
+results/checkpoints/
+
+# models
 *.pt
 *.pth
+
+# environments
 .venv/
+venv/
+env/
+
+# python
 __pycache__/
+*.pyc
+
+# notebooks
 .ipynb_checkpoints/
-results/checkpoints/
+
+# OS
+.DS_Store
+
+# internal docs (not shipped with repo)
 INTERNAL_PROJECT_BRAIN.md
 DEVELOPMENT_HISTORY.md
+.env
