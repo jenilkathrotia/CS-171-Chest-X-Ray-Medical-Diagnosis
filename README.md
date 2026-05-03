@@ -14,6 +14,23 @@ Binary chest X-ray classification project (`NORMAL` vs `PNEUMONIA`) using PyTorc
 - `notebooks/` - EDA, training (Colab), evaluation, and Grad-CAM walkthroughs
 - `results/` - logs, checkpoints, metrics JSON, report markdown, and generated figures
 
+## Notebook Deliverables
+
+- `notebooks/full_pipeline.ipynb` - **single-file Colab notebook** that runs the entire project end-to-end (EDA + optional training + evaluation + interpretability + summary). Set `RUN_TRAINING=False` (default) to use verified checkpoints, or `True` to retrain. Recommended for graders or quick reproduction.
+- `notebooks/01_eda.ipynb` - dataset exploration and sanity checks
+- `notebooks/train_colab.ipynb` - Colab training workflow
+- `notebooks/02_evaluation.ipynb` - metric and figure-based evaluation narrative
+- `notebooks/03_gradcam.ipynb` - Grad-CAM interpretability narrative
+
+### Quick Colab run
+
+1. Open https://colab.research.google.com
+2. File -> Open notebook -> GitHub tab
+3. URL: `https://github.com/jenilkathrotia/CS-171-Chest-X-Ray-Medical-Diagnosis`, branch: `part-3`
+4. Open `notebooks/full_pipeline.ipynb`
+5. Runtime -> Run all
+
+
 ## Local Setup
 
 ### 1) Create and activate a Python environment
@@ -150,22 +167,6 @@ Interpretation: DenseNet121 is the stronger model on every clinical metric. It m
 
 ![Custom CNN Confusion Matrix](results/confusion_matrices/custom_cnn_confusion_matrix.png)
 ![DenseNet121 Confusion Matrix](results/confusion_matrices/densenet121_confusion_matrix.png)
-
-## Notebook Deliverables
-
-- `notebooks/full_pipeline.ipynb` - **single-file Colab notebook** that runs the entire project end-to-end (EDA + optional training + evaluation + interpretability + summary). Set `RUN_TRAINING=False` (default) to use verified checkpoints, or `True` to retrain. Recommended for graders or quick reproduction.
-- `notebooks/01_eda.ipynb` - dataset exploration and sanity checks
-- `notebooks/train_colab.ipynb` - Colab training workflow
-- `notebooks/02_evaluation.ipynb` - metric and figure-based evaluation narrative
-- `notebooks/03_gradcam.ipynb` - Grad-CAM interpretability narrative
-
-### Quick Colab run
-
-1. Open https://colab.research.google.com
-2. File -> Open notebook -> GitHub tab
-3. URL: `https://github.com/jenilkathrotia/CS-171-Chest-X-Ray-Medical-Diagnosis`, branch: `part-3`
-4. Open `notebooks/full_pipeline.ipynb`
-5. Runtime -> Run all
 
 ## Caveats
 
