@@ -1,4 +1,4 @@
-# Part 3 Final Evaluation Report
+# Evaluation Report
 
 ## Objective
 Evaluate trained pneumonia classifiers on the Chest X-Ray test split and summarize interpretability findings using Grad-CAM, with clinical emphasis on pneumonia recall (sensitivity).
